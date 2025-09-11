@@ -32,7 +32,7 @@ function changeLanguage(){
 changeLanguage();
 
 
-const numLugs = 6;
+let numLugs;
 let audioContext;
 let analyser;
 let source;
@@ -64,15 +64,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const sensitivityInput = document.getElementById('rmsThreshold');
     const sensitivityValue = document.getElementById('sensitivityValue');
+
     sensitivityInput.addEventListener('input', () => {
-        rmsThreshold = parseFloat(sensitivityInput.value);
-        sensitivityValue.innerText = rmsThreshold.toFixed(2);
+        let min = parseFloat(sensitivityInput.min);
+        let max = parseFloat(sensitivityInput.max);
+        let val = parseFloat(sensitivityInput.value);
+
+        // процент прокрутки (0–100)
+        let percent = ((val - min) / (max - min)) * 100;
+
+        // если нужно наоборот (100 → 0):
+        // percent = 100 - percent;
+
+        sensitivityValue.innerText = Math.round(percent) + "%";
     });
 });
 
 function createLugButtons() {
     const container = document.getElementById('lugsContainer');
     container.innerHTML = '';
+    numLugs = document.querySelector('.lug__input').value;
     for (let i = 0; i < numLugs; i++) {
         const div = document.createElement('div');
         div.className = 'lug';
