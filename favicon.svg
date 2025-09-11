@@ -1,0 +1,26 @@
+<!--?xml version="1.0" encoding="utf-8"?-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- фон -->
+  <rect width="64" height="64" rx="12" fill="#0f172a"></rect>
+  <!-- корпус барабана -->
+  <ellipse cx="32" cy="32" rx="22" ry="14" fill="#e6eef8"></ellipse>
+  <ellipse cx="32" cy="29" rx="22" ry="6" fill="#c9d8ef"></ellipse>
+  <!-- обод -->
+  <rect x="10" y="18" width="44" height="28" rx="6" fill="none" stroke="#0b1220" stroke-width="2"></rect>
+  <ellipse cx="32" cy="28.5" rx="22" ry="6" fill="none" stroke="#0b1220" stroke-width="1.5"></ellipse>
+  <!-- шаблон вибрации / индикатор (несколько линий как волнa) -->
+  <g transform="translate(8,18)" opacity="0.9" fill="none" stroke="#0b1220" stroke-linecap="round" stroke-width="1.2">
+    <path d="M6 8 Q10 5 14 8"></path>
+    <path d="M18 8 Q22 11 26 8"></path>
+    <path d="M30 8 Q34 5 38 8"></path>
+  </g>
+  <!-- палочки -->
+  <g transform="rotate(-30 32 32)">
+    <rect x="34" y="6" width="3.5" height="26" rx="1.5" fill="#d6a06a"></rect>
+    <circle cx="36" cy="34" r="3.4" fill="#d6a06a"></circle>
+  </g>
+  <g transform="rotate(20 32 32)">
+    <rect x="26" y="6" width="3.5" height="26" rx="1.5" fill="#caa56b" opacity="0.95"></rect>
+    <circle cx="28" cy="34" r="3.4" fill="#caa56b" opacity="0.95"></circle>
+  </g>
+</svg>
