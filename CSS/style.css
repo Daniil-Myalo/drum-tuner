@@ -68,6 +68,22 @@ h1 {
     width: 90%;
     max-width: 600px;
 }
+
+.lug_container{
+    display: flex;
+    align-items: center;
+}
+
+.lug__input{
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 5px 10px;
+    border-radius: 5px;
+    width: 100px;
+    text-align: center;
+    margin: 0px 5px;
+}
 .lug {
     background: rgba(255,255,255,0.05);
     padding: 15px;
@@ -118,7 +134,7 @@ p {
 #targetFreqContainer{
     padding: 10px 0px 0px 0px;
 }
-#targetFreqContainer, #sensitivityContainer {
+#targetFreqContainer, #sensitivityContainer, .lng-lug__title{
     margin: 10px 0;
     font-size: 1.2em;
 }
@@ -126,7 +142,7 @@ p {
 #sensitivityContainer input{
     margin: 0px 0px 0px 10px;
 }
-#targetFreq, #rmsThreshold {
+#targetFreq, #rmsThreshold, .lug__input {
     background: rgba(255,255,255,0.1);
     color: #fff;
     border: 1px solid rgba(255,255,255,0.2);
@@ -179,7 +195,7 @@ p {
     }
     .lug { width: 100%; max-width: 300px; padding: 10px; }
     p { font-size: 0.95em;}
-    #targetFreqContainer, #sensitivityContainer { font-size: 1em; max-width: 300px}
+    #targetFreqContainer, #sensitivityContainer, .lng-lug__title { font-size: 1em; max-width: 300px}
     #sensitivityContainer{flex-wrap: wrap; justify-content: center;}
     #sensitivityContainer input, #sensitivityValue {margin: 10px 5px 0px;}
     #targetFreq, #rmsThreshold { width: 80px; }
@@ -190,7 +206,7 @@ p {
     #startButton { padding: 10px 15px; font-size: 0.9em; }
     .lug { padding: 8px; font-size: 0.9em; }
     p { font-size: 0.9em; }
-    #targetFreqContainer, #sensitivityContainer { font-size: 1em; }
+    #targetFreqContainer, #sensitivityContainer, .lng-lug__title { font-size: 1em; }
     #sensitivityContainer input, #sensitivityValue {margin: 20px 5px 0px}
     #targetFreq, #rmsThreshold { width: 70px; padding: 4px 8px; }
 }
