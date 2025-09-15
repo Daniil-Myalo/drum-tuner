@@ -1,37 +1,65 @@
-// мультиязычность на тюнере
-
+// ===================== МУЛЬТИЯЗЫЧНОСТЬ =====================
 const select = document.querySelector('.change-lang');
 const allLang = ['ru', 'en', 'ua'];
 
-select.addEventListener('change', changeURLLanguage);
-
-function changeURLLanguage(){
+select.addEventListener('change', () => {
     let lang = select.value;
-    location.href = window.location.pathname + '#' + lang;
-    location.reload();   
-}
+    window.location.hash = lang;   // меняем hash без reload
+    changeLanguage();              // сразу обновляем текст
+});
 
-function changeLanguage(){
-    let hash = window.location.hash;
-    hash = hash.substr(1);
-    console.log(hash);
+function changeLanguage() {
+    let hash = window.location.hash.substr(1);
+    
     if (!allLang.includes(hash)) {
-        location.href = window.location.pathname + '#en';
-        location.reload();
+        hash = 'en'; // язык по умолчанию
+        window.location.hash = hash;
     }
+    
     select.value = hash;
-    for (let key in langArr){
-        let elem = document.querySelector('.lng-'+ key);
+
+    for (let key in langArr) {
+        let elem = document.querySelector('.lng-' + key);
         if (elem) {
             elem.innerHTML = langArr[key][hash];
-        }
-        
+        } 
     }
-}
 
+    // меняем картинку флага
+    document.querySelector('.lannguage_flag-img').src = "img/" + hash + ".png";
+}        
 changeLanguage();
 
 
+// ===================== ТЕМА (светлая/тёмная) =====================
+let themeIcon = document.getElementById('themeIcon');
+
+document.addEventListener('DOMContentLoaded', () => {
+  const themeSwitch = document.querySelector('.theme__switch');
+  const body = document.body;
+  
+  const savedTheme = localStorage.getItem('theme') || 'dark';
+  themeSwitch.value = savedTheme;
+  if (savedTheme === 'light') {
+    body.classList.add('light-theme');
+  }
+  
+  themeSwitch.addEventListener('change', (e) => {
+    const newTheme = e.target.value;
+    localStorage.setItem('theme', newTheme);  
+    
+    if (newTheme === 'light') {
+      body.classList.add('light-theme');
+      themeIcon.className = "fa fa-sun";
+    } else {
+      body.classList.remove('light-theme');
+      themeIcon.className = "fa fa-moon";
+    }
+  });
+});
+
+
+// ===================== ТЮНЕР =====================
 let numLugs;
 let audioContext;
 let analyser;
@@ -43,8 +71,22 @@ let targetFreq = 100;
 let rmsThreshold = 0.02;
 let isRunning = false;
 let mediaStream;
+let input_lug_1 = document.querySelector('.lug__input');
+let input_lug_2 = document.getElementById('numLugs');
+let fundamentalFrec = document.getElementById('fundamental');
+let isStarted = false;
 
-// Функция для конвертации частоты в ноту
+
+
+input_lug_1.addEventListener('input', () => {
+  input_lug_2.value = input_lug_1.value;
+});
+
+input_lug_2.addEventListener('input', () => {
+  input_lug_1.value = input_lug_2.value;
+});
+
+// конвертация частоты в ноту
 function freqToNote(freq) {
     if (freq <= 0) return '--';
     const midi = 12 * Math.log2(freq / 440) + 69;
@@ -55,7 +97,7 @@ function freqToNote(freq) {
     return `${note}${octave}`;
 }
 
-// Обновление целевой частоты и чувствительности
+// обновление целевой частоты и чувствительности
 document.addEventListener('DOMContentLoaded', () => {
     const targetInput = document.getElementById('targetFreq');
     targetInput.addEventListener('input', () => {
@@ -70,35 +112,57 @@ document.addEventListener('DOMContentLoaded', () => {
         let max = parseFloat(sensitivityInput.max);
         let val = parseFloat(sensitivityInput.value);
 
-        // процент прокрутки (0–100)
         let percent = ((val - min) / (max - min)) * 100;
-
-        // если нужно наоборот (100 → 0):
-        // percent = 100 - percent;
-
         sensitivityValue.innerText = Math.round(percent) + "%";
     });
 });
 
 function createLugButtons() {
-    const container = document.getElementById('lugsContainer');
-    container.innerHTML = '';
-    numLugs = document.querySelector('.lug__input').value;
-    for (let i = 0; i < numLugs; i++) {
-        const div = document.createElement('div');
-        div.className = 'lug';
-        div.innerHTML = `<i class="fas fa-bolt"></i> Lug ${i+1}: <span id="lug${i}">-- Hz</span>`;
-        div.onclick = () => selectLug(i);
-        container.appendChild(div);
-    }
-    selectLug(0);
+  if (!lugsContainer) return;
+  lugsContainer.innerHTML = '';
+
+  // Лаги
+  numLugs = parseInt((input_lug_2 && input_lug_2.value) || numLugs, 10) || numLugs;
+  lugFrequencies = new Array(numLugs).fill('--');
+  for (let i = 0; i < numLugs; i++) {
+    const div = document.createElement('div');
+    div.className = 'lug';
+    div.innerHTML = `<i class="fas fa-bolt"></i> Lug ${i+1}: <span id="lug${i}">-- Hz</span>`;
+    div.onclick = () => selectLug(i);
+    lugsContainer.appendChild(div);
+  }
+
+  // 🔥 Блок для фундаментала
+  const fundDiv = document.createElement('div');
+  fundDiv.className = 'lug fundamental-lug';
+  fundDiv.innerHTML = `<i class="fas fa-drum"></i> Fundamental: <span id="fundLug">-- Hz</span>`;
+//   fundDiv.onclick = () => selectLug(-1);   // -1 будет означать фундаментал
+  lugsContainer.appendChild(fundDiv);
+
+  selectLug(0);
+
+  fundamentalFrec.addEventListener("click", () => {
+        if (fundamentalFrec.classList.contains("selected")) {
+            selectLug(-1);
+        } else {
+           selectLug(0);
+        }
+    });
 }
 
 function selectLug(index) {
-    document.querySelectorAll('.lug').forEach((el, i) => {
-        el.classList.toggle('selected', i === index);
-    });
-    currentLug = index;
+  if (!lugsContainer) return;
+  const elems = lugsContainer.querySelectorAll('.lug');
+  elems.forEach((el, i) => {
+    if (index === -1 && el.classList.contains('fundamental-lug')) {
+        fundamentalFrec.classList.add('selected');
+      el.classList.add('selected');
+    } else {
+      el.classList.toggle('selected', i === index);
+      fundamentalFrec.classList.remove('selected');
+    }
+  });
+  currentLug = index;
 }
 
 async function startTuner() {
@@ -113,7 +177,7 @@ async function startTuner() {
         mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
         source = audioContext.createMediaStreamSource(mediaStream);
         source.connect(analyser);
-
+        
         createLugButtons();
         detectPitch();
         isRunning = true;
@@ -121,18 +185,16 @@ async function startTuner() {
     } catch (err) {
         alert('Ошибка: нужен доступ к микрофону. ' + err.message);
     }
+
+    fundamentalFrec.classList.add('active');
+
+    isStarted = true;
 }
 
 function stopTuner() {
-    if (requestId) {
-        cancelAnimationFrame(requestId);
-    }
-    if (mediaStream) {
-        mediaStream.getTracks().forEach(track => track.stop());
-    }
-    if (audioContext) {
-        audioContext.close();
-    }
+    if (requestId) cancelAnimationFrame(requestId);
+    if (mediaStream) mediaStream.getTracks().forEach(track => track.stop());
+    if (audioContext) audioContext.close();
     document.getElementById('lugsContainer').innerHTML = '';
     lugFrequencies = new Array(numLugs).fill('--');
     currentLug = 0;
@@ -140,6 +202,8 @@ function stopTuner() {
     document.getElementById('progressBar').style.width = '0%';
     isRunning = false;
     updateButtonState();
+    fundamentalFrec.classList.remove('selected');
+    fundamentalFrec.classList.remove('active');
 }
 
 function updateButtonState() {
@@ -150,14 +214,12 @@ function updateButtonState() {
     } else {
         button.innerHTML = '<i class="fas fa-play"></i> Start';
     }
+    isStarted = false;
 }
 
 function toggleTuner() {
-    if (isRunning) {
-        stopTuner();
-    } else {
-        startTuner();
-    }
+    if (isRunning) stopTuner();
+    else startTuner();
 }
 
 function detectPitch() {
@@ -166,9 +228,7 @@ function detectPitch() {
     analyser.getFloatTimeDomainData(buffer);
 
     let rms = 0;
-    for (let i = 0; i < bufferLength; i++) {
-        rms += buffer[i] * buffer[i];
-    }
+    for (let i = 0; i < bufferLength; i++) rms += buffer[i] * buffer[i];
     rms = Math.sqrt(rms / bufferLength);
 
     if (rms < rmsThreshold) {
@@ -187,10 +247,7 @@ function detectPitch() {
     }
 
     const normCorrelations = correlations.map((val) => val / correlations[0]);
-
-    let bestOffset = -1;
-    let bestCorrelation = -Infinity;
-
+    let bestOffset = -1, bestCorrelation = -Infinity;
     const minOffset = 20;
     const maxOffset = Math.floor(audioContext.sampleRate / 50);
 
@@ -222,8 +279,16 @@ function detectPitch() {
         const roundedFreq = Math.round(frequency);
         const note = freqToNote(roundedFreq);
         document.getElementById('frequency').innerText = `Frec ${roundedFreq} Hz (${note})`;
-        lugFrequencies[currentLug] = roundedFreq;
-        document.getElementById(`lug${currentLug}`).innerText = `${roundedFreq} Hz (${note})`;
+        if (currentLug === -1) {
+  // 🔥 обновляем фундаментал
+  const fundSpan = document.getElementById('fundLug');
+  if (fundSpan) fundSpan.innerText = `${roundedFreq} Hz (${note})`;
+} else {
+  // обновляем выбранный лаг
+  lugFrequencies[currentLug] = roundedFreq;
+  const lugSpan = document.getElementById(`lug${currentLug}`);
+  if (lugSpan) lugSpan.innerText = `${roundedFreq} Hz (${note})`;
+}
 
         const deviation = Math.abs(roundedFreq - targetFreq);
         if (deviation < 5) {
@@ -239,6 +304,88 @@ function detectPitch() {
 
     requestId = requestAnimationFrame(detectPitch);
 }
-
 document.getElementById('startButton').addEventListener('click', toggleTuner);
 
+
+// ===================== КАЛЬКУЛЯТОР =====================
+const noteFrequencies = {
+    'C1': 32.70, 'D1': 36.71, 'E1': 41.20, 'F1': 43.65, 'G1': 49.00, 'A1': 55.00, 'B1': 61.74,
+    'C2': 65.41, 'D2': 73.42, 'E2': 82.41, 'F2': 87.31, 'G2': 98.00, 'A2': 110.00, 'B2': 123.47,
+    'C3': 130.81, 'D3': 146.83, 'E3': 164.81, 'F3': 174.61, 'G3': 196.00, 'A3': 220.00, 'B3': 246.94,
+    'C4': 261.63, 'D4': 293.66, 'E4': 329.63, 'F4': 349.23, 'G4': 392.00, 'A4': 440.00, 'B4': 493.88,
+    'C5': 523.25, 'D5': 587.33, 'E5': 659.25, 'F5': 698.46, 'G5': 783.99, 'A5': 880.00, 'B5': 987.77,
+    'C6': 1046.50
+};
+const sustainFactors = { 'none': 1.2, 'small': 1.4, 'medium': 1.6, 'large': 1.8, 'very': 1.9 };
+const drumBaseFactors = { 'bass': 0.95, 'tom': 1.0, 'snare': 1.05 };
+
+function calculateLugFrequency() {
+    const drumType = document.getElementById('drumType').value;
+    const note = document.getElementById('note').value;
+    const sustain = document.getElementById('sustain').value;
+    const diameter = parseFloat(document.getElementById('diameter').value) || 0;
+    const numLugs = parseInt(document.getElementById('numLugs').value);
+
+    const fundamental = noteFrequencies[note];
+    let factor = sustainFactors[sustain] * drumBaseFactors[drumType];
+
+    const diamCorrection = 14 / diameter; 
+    factor *= diamCorrection;
+    const lugFreq = Math.round(fundamental * factor);
+
+    const r = (diameter / 2 * 0.0254);
+    const maxF = Math.round((2.4048 * 500) / (2 * Math.PI * r));
+    const minF = Math.round((2.4048 * 100) / (2 * Math.PI * r));
+            
+    rangeInfo.innerText = `Recommended range of notes for ${diameter}" drum: ${minF}–${maxF} Hz`;
+
+    document.getElementById('calcResult').innerHTML = `
+        <div class="lng-better_frec">Batter lug frec: ${lugFreq} Hz</div>
+        <div class="lng-fundamental-frec">Fundamental: ${Math.round(fundamental)} Hz</div>
+    `;
+
+    document.getElementById('fundamental').innerHTML = `
+        <div class="lng-fundamental-frec">Fundamental: ${Math.round(fundamental)} Hz</div>
+    `;
+    
+    let FundamenContainer = document.getElementById('fundamental');
+    let FundamenFrec = Math.round(fundamental);
+    let input_lugs = document.getElementById('targetFreq');
+    let fundamental_Drums = document.querySelector('lug fundamental-lug');
+    console.log(fundamental_Drums);
+
+    FundamenContainer.addEventListener("click", () => {
+        if(isStarted){
+            if (FundamenContainer.classList.contains("selected")) {
+                FundamenContainer.classList.remove('selected');
+                input_lugs.value = lugFreq;
+                console.log(fundamental_Drums);
+            } else {
+                FundamenContainer.classList.add('selected');
+                input_lugs.value = FundamenFrec;
+            }       
+        };
+    });
+    
+
+    const tbody = document.querySelector('#lugsTable tbody');
+    tbody.innerHTML = '';
+    for (let i = 1; i <= numLugs; i++) {
+        const row = tbody.insertRow();
+        row.insertCell(0).textContent = `Lug ${i}`;
+        row.insertCell(1).textContent = `${lugFreq} Hz`;
+    }
+
+    document.getElementById('targetFreq').value = lugFreq;
+    targetFreq = lugFreq;
+}
+
+// слушатели калькулятора
+document.getElementById('drumType').addEventListener('change', calculateLugFrequency);
+document.getElementById('note').addEventListener('change', calculateLugFrequency);
+document.getElementById('sustain').addEventListener('change', calculateLugFrequency);
+document.getElementById('diameter').addEventListener('input', calculateLugFrequency);
+document.getElementById('numLugs').addEventListener('input', calculateLugFrequency);
+
+// инициализация
+calculateLugFrequency();
