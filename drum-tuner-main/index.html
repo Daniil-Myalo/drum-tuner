@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title class="lng-until">Онлайн-тюнер для барабанов</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" type="text/css" href="CSS/style.css">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+
+</head>
+<body class="durk">
+    <div class="container">
+        <h1 class=""><i class="fas fa-drum"></i><span class="lng-title">Тюнер для барабанов</span><span> 2.0</span></h1>
+        <div id="startButton"><i class="fas fa-play"></i> Start</div>
+        <div id="targetFreqContainer">
+            <span class="lng-frequency">Целевая частота:</span>
+            <div class="frequency__value"><input type="number" id="targetFreq" value="100"> Hz</div>
+        </div>
+        <div id="sensitivityContainer">
+            <span class="lng-sensitivity">Чувствительность микрофона:</span> 
+            <div class="sensitivity__value">
+                <input type="range" id="rmsThreshold" min="0.0001" max="0.1" step="0.0001" value="0.02"> <span id="sensitivityValue">20%</span></div>
+            </div>
+        <div class="lug_container"><span class="lng-lug__title">Введите количество лагов</span><input type="number" name="lug_counter" class="lug__input" value="8"></div>
+        <div id="frequency">-- Hz</div>
+        <div id="progress"><div id="progressBar"></div></div>
+        <div id="lugsContainer">
+            <!-- Кнопки для лагов -->
+        </div>
+        <span class="lng-title__fundamental">Проверка фундаментальной частоты барабана</span>
+        <div class="targets-row">
+            <div id="lugTarget" class="selected">
+                <i class="fas fa-bolt"></i> <span class="lng-lug__button">Lug</span>: <span id="lugTargetValue">100</span> Hz
+            </div>
+            <div id="fundamental">
+                <i class="fas fa-drum"></i><span class="lng-title"> </span> <span class="lng-fund__button">Fundamental</span>: <span id="fundamentalValue">--</span> Hz
+            </div>
+        </div>
+        <p class="lng-description">Выбери лаг, ударь рядом с ним палочкой и подстрой. Цель: все лаги на одной частоте (введи цель выше). Теперь показывает ноту и позволяет регулировать чувствительность.</p>
+        <!-- Калькулятор -->
+        <div id="calculatorSection">
+            <h2><i class="fas fa-calculator"></i> <span class="lng-calc__title">Калькулятор тюна барабана</span></h2>
+            <label class="lng-durmtype__label">Выбери барабан</label>
+            <select id="drumType" class="calc-input">
+                <option value="bass">Bass Drum</option>
+                <option value="tom">Tom</option>
+                <option value="snare">Snare</option>
+            </select>
+            <label class="lng-diameter__label">Выбери Диаметр барабана</label>
+            <input type="number" id="diameter" class="calc-input" min="8" max="24" step="1" value="14" placeholder="Диаметр (дюймы)">
+            <label class="lng-note__label">Выбери ноту</label>
+            <select id="note" class="calc-input">
+                <option value="C1">C1 (32.7 Hz)</option><option value="D1">D1 (36.7 Hz)</option><option value="E1">E1 (41.2 Hz)</option>
+                <option value="F1">F1 (43.7 Hz)</option><option value="G1">G1 (49.0 Hz)</option><option value="A1">A1 (55.0 Hz)</option><option value="B1">B1 (61.7 Hz)</option>
+                <option value="C2">C2 (65.4 Hz)</option><option value="D2">D2 (73.4 Hz)</option><option value="E2">E2 (82.4 Hz)</option>
+                <option value="F2">F2 (87.3 Hz)</option><option value="G2">G2 (98.0 Hz)</option><option value="A2">A2 (110 Hz)</option><option value="B2">B2 (123.5 Hz)</option>
+                <option value="C3">C3 (130.8 Hz)</option><option value="D3">D3 (146.8 Hz)</option><option value="E3">E3 (164.8 Hz)</option>
+                <option value="F3">F3 (174.6 Hz)</option><option value="G3">G3 (196.0 Hz)</option><option value="A3">A3 (220 Hz)</option><option value="B3">B3 (246.9 Hz)</option>
+                <option value="C4">C4 (261.6 Hz)</option><option value="D4">D4 (293.7 Hz)</option><option value="E4">E4 (329.6 Hz)</option>
+                <option value="F4">F4 (349.2 Hz)</option><option value="G4">G4 (392.0 Hz)</option><option value="A4">A4 (440 Hz)</option><option value="B4">B4 (493.9 Hz)</option>
+                <option value="C5">C5 (523.3 Hz)</option><option value="D5">D5 (587.3 Hz)</option><option value="E5">E5 (659.3 Hz)</option>
+                <option value="F5">F5 (698.5 Hz)</option><option value="G5">G5 (784.0 Hz)</option><option value="A5">A5 (880 Hz)</option><option value="B5">B5 (987.8 Hz)</option>
+                <option value="C6">C6 (1046.5 Hz)</option>
+            </select>
+            <label class="lng-sustaine__label">Выбери сустейн</label>
+            <select id="sustain" class="calc-input">
+                <option value="none" class="lng-sustain__none">Почти без сустейна</option>
+                <option value="small" class="lng-sustain__small">Маленький</option>
+                <option value="medium" class="lng-sustain__medium">Средний</option>
+                <option value="large" class="lng-sustain__large">Большой</option>
+                <option value="very" class="lng-sustain__vary">Очень большой</option>
+            </select>
+            <label class="lng-lug__label">Выбери количество лагов</label>
+            <input type="number" id="numLugs" class="calc-input" min="4" max="12" value="8" placeholder="Количество лагов">
+            <div id="rangeInfo"></div>
+            <div id="calcResult">Целевая lug частота: -- Hz</div>
+            <table id="lugsTable">
+                <thead><tr><th>Лаг</th><th>Частота (Hz)</th></tr></thead>
+                <tbody></tbody>
+            </table>
+            <p class="lng-clac__description" style="font-size: 0.9em; opacity: 0.7;">Для resonant head: ~1.2–1.5x выше (зависит от сустейна). Настрой все лаги равномерно!</p>
+        </div>
+        <div class="container-settings">
+            <div id="languageContainer">
+                    <span class="lng-language">Язык: </span>
+                    <select class="change-lang">
+                        <option id="ru" value="ru" data-flag="flags/ru.png">RU</option>
+                        <option id="ru" value="en" data-flag="flags/en.png">EN</option>
+                        <option value="ua" data-flag="flags/ua.png">UA</option>
+                    </select>
+                    <div class="lannguage_flag">
+                        <img src="img/en.png" alt="flag" class="lannguage_flag-img">
+                    </div>
+            </div>
+            <div class="theme__set theme">
+                <span class="lng-theme__title">Тема</span>
+                <select class="theme__switch">
+                        <option id="dark" value="dark">Dark</option>
+                        <option id="light" value="light">Light</option>
+                </select>
+                <i class="fa fa-moon" id="themeIcon"></i>
+            </div>
+        </div>
+        <div class="donated">
+            <a href="https://send.monobank.ua/jar/ADKWDwocM4" target="_blank" class="donated__link"><i class="fa-solid fa-circle-dollar-to-slot"></i><span class="lng-donate"> Донат</span></a>
+        </div>
+    </div>    
+        
+    <script src="JS/lang.js"></script>
+    <script src="JS/main.js"></script>
+    <!-- <script src="JS/calculate.js"></script> -->
+</body>
+</html>
