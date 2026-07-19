@@ -260,6 +260,29 @@ p {
   box-shadow: 0 2px 4px var(--shadow);
 }
 
+.targets-row {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+#lugTarget {
+  background: var(--card-bg);
+  padding: 15px;
+  border-radius: 15px;
+  text-align: center;
+  transition: background 0.3s, transform 0.3s;
+  box-shadow: 0 2px 4px var(--shadow);
+}
+
+#lugTarget.selected {
+  background: #ff5722;
+  color: #fff;
+  box-shadow: 0 4px 8px rgba(255,87,34,0.5);
+}
+
 .active:hover {
   background: var(--card-hover);
   transform: translateY(-5px);

@@ -68,12 +68,18 @@ let requestId;
 let currentLug = 0;
 let lugFrequencies = new Array(numLugs).fill('--');
 let targetFreq = 100;
+let fundamentalTargetFreq = 0; // целевая частота для режима "Fundamental" (из калькулятора)
 let rmsThreshold = 0.02;
 let isRunning = false;
 let mediaStream;
+let holdUntil = 0;              // до какого момента (Date.now()) держим текущее показание
+const HOLD_DURATION_MS = 3500;  // сколько мс держим частоту после чёткого удара (3-4 сек)
 let input_lug_1 = document.querySelector('.lug__input');
 let input_lug_2 = document.getElementById('numLugs');
 let fundamentalFrec = document.getElementById('fundamental');
+let fundamentalValueSpan = document.getElementById('fundamentalValue');
+let lugTargetBtn = document.getElementById('lugTarget');
+let lugTargetValueSpan = document.getElementById('lugTargetValue');
 let isStarted = false;
 
 
@@ -102,7 +108,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const targetInput = document.getElementById('targetFreq');
     targetInput.addEventListener('input', () => {
         targetFreq = parseInt(targetInput.value) || 100;
+        if (lugTargetValueSpan) lugTargetValueSpan.innerText = targetFreq;
     });
+    if (lugTargetValueSpan) lugTargetValueSpan.innerText = targetFreq;
 
     const sensitivityInput = document.getElementById('rmsThreshold');
     const sensitivityValue = document.getElementById('sensitivityValue');
@@ -117,52 +125,48 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+// Кнопки "Lug 1, Lug 2..." и дублирующая кнопка "Fundamental" больше не
+// создаются в lugsContainer при старте тюнера — остаётся только общий
+// счётчик частоты (#frequency) и статичный блок Fundamental из HTML,
+// который теперь сам работает как переключатель режима.
 function createLugButtons() {
-  if (!lugsContainer) return;
-  lugsContainer.innerHTML = '';
+  if (lugsContainer) lugsContainer.innerHTML = '';
 
-  // Лаги
   numLugs = parseInt((input_lug_2 && input_lug_2.value) || numLugs, 10) || numLugs;
   lugFrequencies = new Array(numLugs).fill('--');
-  for (let i = 0; i < numLugs; i++) {
-    const div = document.createElement('div');
-    div.className = 'lug';
-    div.innerHTML = `<i class="fas fa-bolt"></i> Lug ${i+1}: <span id="lug${i}">-- Hz</span>`;
-    div.onclick = () => selectLug(i);
-    lugsContainer.appendChild(div);
-  }
-
-  // 🔥 Блок для фундаментала
-  const fundDiv = document.createElement('div');
-  fundDiv.className = 'lug fundamental-lug';
-  fundDiv.innerHTML = `<i class="fas fa-drum"></i> Fundamental: <span id="fundLug">-- Hz</span>`;
-//   fundDiv.onclick = () => selectLug(-1);   // -1 будет означать фундаментал
-  lugsContainer.appendChild(fundDiv);
-
   selectLug(0);
+}
 
-  fundamentalFrec.addEventListener("click", () => {
-        if (fundamentalFrec.classList.contains("selected")) {
-            selectLug(-1);
-        } else {
-           selectLug(0);
-        }
+// Слушатели вешаем один раз при загрузке скрипта, а не при каждом старте,
+// чтобы не плодить дублирующиеся обработчики клика.
+if (lugTargetBtn) {
+    lugTargetBtn.addEventListener('click', () => {
+        if (!isRunning) return;
+        selectLug(0);
+        const lugValue = parseInt(lugTargetValueSpan && lugTargetValueSpan.innerText) || targetFreq;
+        setTargetFrequency(lugValue);
     });
 }
 
+fundamentalFrec.addEventListener('click', () => {
+    if (!isRunning) return;
+    selectLug(-1);
+    setTargetFrequency(fundamentalTargetFreq);
+});
+
+// Переносит частоту (клик по Lug/Fundamental) в поле настройки тюнера
+// #targetFreq — именно по нему тюнер ориентируется на зелёный/красный цвет.
+function setTargetFrequency(value) {
+    if (!value) return;
+    targetFreq = value;
+    const targetInput = document.getElementById('targetFreq');
+    if (targetInput) targetInput.value = value;
+}
+
 function selectLug(index) {
-  if (!lugsContainer) return;
-  const elems = lugsContainer.querySelectorAll('.lug');
-  elems.forEach((el, i) => {
-    if (index === -1 && el.classList.contains('fundamental-lug')) {
-        fundamentalFrec.classList.add('selected');
-      el.classList.add('selected');
-    } else {
-      el.classList.toggle('selected', i === index);
-      fundamentalFrec.classList.remove('selected');
-    }
-  });
   currentLug = index;
+  fundamentalFrec.classList.toggle('selected', index === -1);
+  if (lugTargetBtn) lugTargetBtn.classList.toggle('selected', index !== -1);
 }
 
 async function startTuner() {
@@ -187,6 +191,7 @@ async function startTuner() {
     }
 
     fundamentalFrec.classList.add('active');
+    if (lugTargetBtn) lugTargetBtn.classList.add('active');
 
     isStarted = true;
 }
@@ -200,10 +205,15 @@ function stopTuner() {
     currentLug = 0;
     document.getElementById('frequency').innerText = '-- Hz';
     document.getElementById('progressBar').style.width = '0%';
+    holdUntil = 0;
     isRunning = false;
     updateButtonState();
     fundamentalFrec.classList.remove('selected');
     fundamentalFrec.classList.remove('active');
+    if (lugTargetBtn) {
+        lugTargetBtn.classList.remove('selected');
+        lugTargetBtn.classList.remove('active');
+    }
 }
 
 function updateButtonState() {
@@ -223,6 +233,13 @@ function toggleTuner() {
 }
 
 function detectPitch() {
+    // Если недавно был зафиксирован чёткий удар — держим показание,
+    // не трогая индикатор, пока не истечёт HOLD_DURATION_MS.
+    if (Date.now() < holdUntil) {
+        requestId = requestAnimationFrame(detectPitch);
+        return;
+    }
+
     const bufferLength = analyser.fftSize;
     const buffer = new Float32Array(bufferLength);
     analyser.getFloatTimeDomainData(buffer);
@@ -290,6 +307,8 @@ function detectPitch() {
   if (lugSpan) lugSpan.innerText = `${roundedFreq} Hz (${note})`;
 }
 
+        // Теперь и Lug, и Fundamental при клике переносят своё значение прямо
+        // в поле #targetFreq, поэтому тюнер всегда сравнивает с targetFreq.
         const deviation = Math.abs(roundedFreq - targetFreq);
         if (deviation < 5) {
             document.getElementById('frequency').classList.add('good');
@@ -300,6 +319,10 @@ function detectPitch() {
         }
         const progress = Math.max(0, 100 - (deviation / (targetFreq * 0.1) * 100));
         document.getElementById('progressBar').style.width = `${progress}%`;
+
+        // Чёткий удар распознан — замораживаем показание на HOLD_DURATION_MS,
+        // чтобы значение не "прыгало" от затухающего звука/шума.
+        holdUntil = Date.now() + HOLD_DURATION_MS;
     }
 
     requestId = requestAnimationFrame(detectPitch);
@@ -333,6 +356,8 @@ function calculateLugFrequency() {
     factor *= diamCorrection;
     const lugFreq = Math.round(fundamental * factor);
 
+    fundamentalTargetFreq = Math.round(fundamental); // используется тюнером как ориентир в режиме Fundamental
+
     const r = (diameter / 2 * 0.0254);
     const maxF = Math.round((2.4048 * 500) / (2 * Math.PI * r));
     const minF = Math.round((2.4048 * 100) / (2 * Math.PI * r));
@@ -344,29 +369,10 @@ function calculateLugFrequency() {
         <div class="lng-fundamental-frec">Fundamental: ${Math.round(fundamental)} Hz</div>
     `;
 
-    document.getElementById('fundamental').innerHTML = `
-        <div class="lng-fundamental-frec">Fundamental: ${Math.round(fundamental)} Hz</div>
-    `;
-    
-    let FundamenContainer = document.getElementById('fundamental');
-    let FundamenFrec = Math.round(fundamental);
-    let input_lugs = document.getElementById('targetFreq');
-    let fundamental_Drums = document.querySelector('lug fundamental-lug');
-    console.log(fundamental_Drums);
+    // Обновляем только число внутри кнопки Fundamental — так же, как и у Lug,
+    // сама разметка (иконка/подпись) больше не перезаписывается.
+    if (fundamentalValueSpan) fundamentalValueSpan.innerText = fundamentalTargetFreq;
 
-    FundamenContainer.addEventListener("click", () => {
-        if(isStarted){
-            if (FundamenContainer.classList.contains("selected")) {
-                FundamenContainer.classList.remove('selected');
-                input_lugs.value = lugFreq;
-                console.log(fundamental_Drums);
-            } else {
-                FundamenContainer.classList.add('selected');
-                input_lugs.value = FundamenFrec;
-            }       
-        };
-    });
-    
 
     const tbody = document.querySelector('#lugsTable tbody');
     tbody.innerHTML = '';
@@ -378,6 +384,15 @@ function calculateLugFrequency() {
 
     document.getElementById('targetFreq').value = lugFreq;
     targetFreq = lugFreq;
+
+    // #lugTargetValue берём напрямую из второго столбца таблицы #lugsTable
+    // (частота лага), а не из отдельной переменной.
+    const firstLugRow = tbody.querySelector('tr');
+    if (firstLugRow && lugTargetValueSpan) {
+        const freqFromTable = parseInt(firstLugRow.cells[1].textContent) || lugFreq;
+        lugTargetValueSpan.innerText = freqFromTable;
+        targetFreq = freqFromTable;
+    }
 }
 
 // слушатели калькулятора
