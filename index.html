@@ -30,8 +30,13 @@
             <!-- Кнопки для лагов -->
         </div>
         <span class="lng-title__fundamental">Проверка фундаментальной частоты барабана</span>
-        <div id="fundamental">
-            <div class="lng-fundamental-frec">Fundamental: -- Hz</div>
+        <div class="targets-row">
+            <div id="lugTarget" class="selected">
+                <i class="fas fa-bolt"></i> <span class="lng-lug__button">Lug</span>: <span id="lugTargetValue">100</span> Hz
+            </div>
+            <div id="fundamental">
+                <i class="fas fa-drum"></i><span class="lng-title"> </span> <span class="lng-fund__button">Fundamental</span>: <span id="fundamentalValue">--</span> Hz
+            </div>
         </div>
         <p class="lng-description">Выбери лаг, ударь рядом с ним палочкой и подстрой. Цель: все лаги на одной частоте (введи цель выше). Теперь показывает ноту и позволяет регулировать чувствительность.</p>
         <!-- Калькулятор -->
